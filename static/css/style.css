@@ -1,0 +1,93 @@
+/* Custom styling for WiFi Security Scanner */
+
+/* Custom background */
+body {
+    background-color: #1e1e2d;
+}
+
+/* Signal strength meter styling */
+.signal-meter {
+    width: 100%;
+}
+
+/* Network card hover effect */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Alert badge styling */
+.badge {
+    font-size: 85%;
+}
+
+/* Security level colors */
+.badge.bg-high {
+    background-color: var(--bs-success);
+}
+
+.badge.bg-medium {
+    background-color: var(--bs-warning);
+}
+
+.badge.bg-low {
+    background-color: var(--bs-danger);
+}
+
+/* Footer styling */
+footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Chart container */
+canvas {
+    max-width: 100%;
+}
+
+/* Table responsiveness */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Custom spinner for loading */
+.spinner-border.custom {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-width: 0.2em;
+    margin-right: 0.5rem;
+}
+
+/* Add some space between form elements */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+/* Custom styling for alerts */
+.alert {
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Add an icon to button hover */
+.btn:hover .fas {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

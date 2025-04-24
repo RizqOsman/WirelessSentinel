@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <h1 class="display-1 text-danger">500</h1>
+    <h2 class="mb-4">Server Error</h2>
+    <p class="lead">Sorry, something went wrong on our server.</p>
+    <p>Please check the application logs for more information.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+        <i class="fas fa-home me-2"></i> Return to Home
+    </a>
+</div>
+{% endblock %}

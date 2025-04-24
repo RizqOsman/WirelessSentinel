@@ -1,0 +1,231 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-key me-2"></i> Brute Force Testing</h1>
+        <p class="lead">Test network passwords through brute force methods</p>
+    </div>
+</div>
+
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Legal Warning:</strong> Only perform brute force testing on networks you own or have explicit permission to test.
+    Unauthorized testing is illegal in most jurisdictions.
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-wrench me-2"></i> Brute Force Configuration
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('brute_force') }}">
+                    <input type="hidden" name="action" value="start_brute_force">
+                    
+                    <div class="mb-3">
+                        <label for="ssid" class="form-label">Target SSID</label>
+                        <input type="text" class="form-control" id="ssid" name="ssid" 
+                               value="{{ request.args.get('ssid', '') }}" required>
+                        <div class="form-text">The name of the network to test.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bssid" class="form-label">Target BSSID</label>
+                        <input type="text" class="form-control" id="bssid" name="bssid" 
+                               value="{{ request.args.get('bssid', '') }}" 
+                               pattern="([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})" required>
+                        <div class="form-text">The MAC address of the access point (format: XX:XX:XX:XX:XX:XX).</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="security" class="form-label">Security Type</label>
+                        <select class="form-select" id="security" name="security" required>
+                            <option value="">Select security type</option>
+                            <option value="WPA2-PSK" {% if request.args.get('security') == 'WPA2' %}selected{% endif %}>WPA2-PSK</option>
+                            <option value="WPA-PSK" {% if request.args.get('security') == 'WPA' %}selected{% endif %}>WPA-PSK</option>
+                            <option value="WPA3-SAE" {% if request.args.get('security') == 'WPA3' %}selected{% endif %}>WPA3-SAE</option>
+                        </select>
+                        <div class="form-text">The security protocol used by the network.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="wordlist" class="form-label">Wordlist</label>
+                        <input type="text" class="form-control" id="wordlist" name="wordlist"
+                               value="data/wordlist.txt">
+                        <div class="form-text">Path to password dictionary file.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i> Start Brute Force Test
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <!-- Target Information (if available) -->
+        {% if target_info %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-info-circle me-2"></i> Target Information
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>SSID:</strong> {{ target_info.ssid }}
+                </div>
+                <div class="mb-3">
+                    <strong>BSSID:</strong> {{ target_info.bssid }}
+                </div>
+                <div class="mb-3">
+                    <strong>Security:</strong> {{ target_info.security }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Results (if available) -->
+        {% if results %}
+        <div class="card mb-4">
+            <div class="card-header {% if results.status == 'success' %}bg-success{% elif results.status == 'failed' %}bg-warning{% else %}bg-danger{% endif %} text-white">
+                <i class="fas {% if results.status == 'success' %}fa-check-circle{% else %}fa-times-circle{% endif %} me-2"></i> 
+                Brute Force Results
+            </div>
+            <div class="card-body">
+                {% if results.status == 'success' %}
+                    <div class="alert alert-success">
+                        <h4 class="alert-heading">Password Found!</h4>
+                        <p>The password for this network is: <strong>{{ results.password }}</strong></p>
+                        <hr>
+                        <p class="mb-0">This indicates that the network is using a weak or common password that should be changed immediately.</p>
+                    </div>
+                {% elif results.status == 'failed' %}
+                    <div class="alert alert-warning">
+                        <h4 class="alert-heading">Password Not Found</h4>
+                        <p>The password was not found in the provided wordlist.</p>
+                        <hr>
+                        <p class="mb-0">This is a good sign that the network is not using a common password, but does not guarantee that it is secure.</p>
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">Error</h4>
+                        <p>An error occurred during the brute force attempt: {{ results.message }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Network List from Scan -->
+{% if networks %}
+<div class="card mt-4">
+    <div class="card-header bg-secondary text-white">
+        <i class="fas fa-list me-2"></i> Available Networks from Scan
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>SSID</th>
+                        <th>BSSID</th>
+                        <th>Security</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for network in networks %}
+                    <tr>
+                        <td>{{ network.ssid }}</td>
+                        <td><small>{{ network.bssid }}</small></td>
+                        <td>{{ network.security }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary select-network" 
+                                    data-ssid="{{ network.ssid }}" 
+                                    data-bssid="{{ network.bssid }}" 
+                                    data-security="{{ network.security }}">
+                                <i class="fas fa-check me-1"></i> Select
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Explanation Card -->
+<div class="card mt-4">
+    <div class="card-header bg-dark text-white">
+        <i class="fas fa-info-circle me-2"></i> About Brute Force Testing
+    </div>
+    <div class="card-body">
+        <h5>WPA2-PSK Testing</h5>
+        <p>
+            This tool attempts to crack WPA2-PSK (Pre-Shared Key) passwords by capturing a handshake and then
+            testing passwords from a wordlist. This is a common method to test if a network is using a weak
+            or easily guessable password.
+        </p>
+        
+        <h5>WPA3-SAE Testing</h5>
+        <p>
+            WPA3 uses Simultaneous Authentication of Equals (SAE) which is much more resistant to offline
+            dictionary attacks compared to WPA2. Testing WPA3 networks requires different techniques and
+            may not be as effective as WPA2 testing.
+        </p>
+        
+        <h5>Ethical Usage</h5>
+        <p>
+            Remember that unauthorized access to computer networks is a criminal offense. Always:
+        </p>
+        <ul>
+            <li>Only test networks you own or have explicit permission to test</li>
+            <li>Document all authorization before conducting tests</li>
+            <li>Report vulnerabilities responsibly to network owners</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to the "Select" buttons in the network table
+    const selectButtons = document.querySelectorAll('.select-network');
+    selectButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const ssid = this.getAttribute('data-ssid');
+            const bssid = this.getAttribute('data-bssid');
+            const security = this.getAttribute('data-security');
+            
+            // Populate the form fields
+            document.getElementById('ssid').value = ssid;
+            document.getElementById('bssid').value = bssid;
+            
+            // Set the security type based on the network security
+            const securitySelect = document.getElementById('security');
+            if (security.includes('WPA3')) {
+                securitySelect.value = 'WPA3-SAE';
+            } else if (security.includes('WPA2')) {
+                securitySelect.value = 'WPA2-PSK';
+            } else if (security.includes('WPA')) {
+                securitySelect.value = 'WPA-PSK';
+            } else {
+                securitySelect.value = '';
+            }
+            
+            // Scroll to the form
+            document.querySelector('.card-header.bg-primary').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

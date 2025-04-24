@@ -1,0 +1,105 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="px-4 py-5 my-5 text-center">
+    <h1 class="display-5 fw-bold text-white">WiFi Security Scanner</h1>
+    <div class="col-lg-8 mx-auto">
+        <p class="lead mb-4">
+            Detect weak networks and rogue access points using an Alfa network card
+            with brute force testing capabilities.
+        </p>
+        
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="{{ url_for('networks') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                <i class="fas fa-wifi me-2"></i> Scan Networks
+            </a>
+            <a href="{{ url_for('brute_force') }}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="fas fa-key me-2"></i> Brute Force Testing
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Network Scanning</h5>
+                <p class="card-text">Scan for WiFi networks in your area and analyze their security settings using the Alfa network card.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-shield-alt fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Security Analysis</h5>
+                <p class="card-text">Identify networks with weak security configurations and vulnerabilities that need attention.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                <h5 class="card-title">Rogue AP Detection</h5>
+                <p class="card-text">Detect potential rogue access points by identifying suspicious deauthentication patterns.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">
+                <i class="fas fa-check-circle me-2"></i> Requirements
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="fas fa-microchip me-2 text-info"></i> Alfa Network Adapter (or compatible WiFi card)
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-laptop-code me-2 text-info"></i> Linux Operating System (preferred)
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-user-shield me-2 text-info"></i> Root/Administrator privileges
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-terminal me-2 text-info"></i> Aircrack-ng suite installed
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-circle me-2"></i> Legal Warning
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <strong>This tool is intended for ethical security testing only.</strong> Using this software to access
+                    networks without explicit permission may be illegal in your jurisdiction.
+                </p>
+                <p class="card-text">
+                    Only use this tool on:
+                </p>
+                <ul>
+                    <li>Networks you own</li>
+                    <li>Networks you have written permission to test</li>
+                    <li>Networks in controlled lab environments</li>
+                </ul>
+                <p class="card-text text-danger">
+                    <small>Unauthorized network penetration is a criminal offense in most countries.</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

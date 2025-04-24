@@ -1,0 +1,289 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-wifi me-2"></i> Network Scanner</h1>
+        <p class="lead">Scan for nearby WiFi networks and analyze their security</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <form method="post" action="{{ url_for('scan') }}">
+            {% if scan_active %}
+                <input type="hidden" name="action" value="stop">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-stop-circle me-2"></i> Stop Scanning
+                </button>
+            {% else %}
+                <input type="hidden" name="action" value="start">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-play-circle me-2"></i> Start Scanning
+                </button>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Scan status -->
+<div class="alert {% if scan_active %}alert-info{% else %}alert-secondary{% endif %}">
+    <i class="fas {% if scan_active %}fa-sync fa-spin{% else %}fa-pause{% endif %} me-2"></i>
+    <span id="scan-status">
+        {% if scan_active %}
+            Scanning is active. Networks will be updated every few seconds.
+        {% else %}
+            Scanning is paused. Click "Start Scanning" to begin.
+        {% endif %}
+    </span>
+</div>
+
+<!-- Warning boxes -->
+<div class="row mb-4">
+    <!-- Weak Networks Alert -->
+    <div class="col-md-6">
+        <div class="card border-warning mb-3">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Insecure Networks</strong>
+            </div>
+            <div class="card-body">
+                <p id="weak-networks-count">
+                    {% set weak_count = networks|selectattr('is_weak', 'defined')|selectattr('is_weak', 'eq', true)|list|length %}
+                    {% if weak_count > 0 %}
+                        Found <span class="badge bg-warning text-dark">{{ weak_count }}</span> networks with weak security!
+                    {% else %}
+                        No networks with weak security detected.
+                    {% endif %}
+                </p>
+                <small>Networks with no encryption or using deprecated protocols like WEP or weak WPA configurations.</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rogue AP Alert -->
+    <div class="col-md-6">
+        <div class="card border-danger mb-3">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-radiation me-2"></i>
+                <strong>Potential Rogue APs</strong>
+            </div>
+            <div class="card-body">
+                <p id="rogue-ap-count">
+                    {% if rogue_aps|length > 0 %}
+                        Detected <span class="badge bg-danger">{{ rogue_aps|length }}</span> potential rogue access points!
+                    {% else %}
+                        No rogue access points detected.
+                    {% endif %}
+                </p>
+                <small>Access points with suspicious deauthentication patterns that may indicate malicious activity.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Network Stats -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-chart-pie me-2"></i> Network Security Overview
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <canvas id="security-chart" width="400" height="300"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <canvas id="encryption-chart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Networks Table -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-list me-2"></i> Detected Networks
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="networks-table">
+                <thead>
+                    <tr>
+                        <th>SSID</th>
+                        <th>BSSID</th>
+                        <th>Channel</th>
+                        <th>Signal</th>
+                        <th>Security</th>
+                        <th>Level</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if networks %}
+                        {% for network in networks %}
+                            <tr {% if network.is_weak %}class="table-danger"{% endif %}>
+                                <td>{{ network.ssid }}</td>
+                                <td><small>{{ network.bssid }}</small></td>
+                                <td>{{ network.channel }}</td>
+                                <td>
+                                    {% if network.signal_strength %}
+                                        <div class="signal-meter">
+                                            <div class="progress" style="height: 20px;">
+                                                {% set strength = ((network.signal_strength + 100) / 70) * 100 %}
+                                                {% set strength = [strength, 100]|min %}
+                                                {% set strength = [strength, 0]|max %}
+                                                
+                                                {% set color = 'bg-danger' %}
+                                                {% if strength > 70 %}
+                                                    {% set color = 'bg-success' %}
+                                                {% elif strength > 40 %}
+                                                    {% set color = 'bg-warning' %}
+                                                {% endif %}
+                                                
+                                                <div class="progress-bar {{ color }}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ strength }}%;" 
+                                                     aria-valuenow="{{ strength }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                    {{ network.signal_strength }} dBm
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ network.security }} 
+                                    {% if network.encryption %}
+                                        ({{ network.encryption }})
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if network.security_level %}
+                                        <span class="badge bg-{{ network.security_level|lower }}">
+                                            {{ network.security_level }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('brute_force') }}?ssid={{ network.ssid }}&bssid={{ network.bssid }}&security={{ network.security }}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-key"></i> Test
+                                    </a>
+                                </td>
+                            </tr>
+                            {% if network.alerts and network.alerts|length > 0 %}
+                                <tr class="table-danger">
+                                    <td colspan="7" class="text-danger">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <strong>Alerts:</strong> 
+                                        {{ network.alerts|join(', ') }}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <em>No networks detected. Start scanning to find networks.</em>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Rogue APs Table (if any detected) -->
+{% if rogue_aps and rogue_aps|length > 0 %}
+    <div class="card mt-4">
+        <div class="card-header bg-danger text-white">
+            <i class="fas fa-radiation me-2"></i> Potential Rogue Access Points
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-danger table-hover">
+                    <thead>
+                        <tr>
+                            <th>BSSID</th>
+                            <th>Client MAC</th>
+                            <th>Deauth Count</th>
+                            <th>Detection Time</th>
+                            <th>Alert</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ap in rogue_aps %}
+                            <tr>
+                                <td>{{ ap.bssid }}</td>
+                                <td>{{ ap.client_mac }}</td>
+                                <td>
+                                    <span class="badge bg-danger">{{ ap.deauth_count }}</span>
+                                </td>
+                                <td>{{ ap.detection_time }}</td>
+                                <td>{{ ap.alert }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+<script>
+    // If scanning is active, update the table periodically
+    {% if scan_active %}
+    const updateInterval = 5000; // 5 seconds
+    
+    function updateNetworksData() {
+        fetch('{{ url_for("api_networks") }}')
+            .then(response => response.json())
+            .then(data => {
+                // Update charts
+                updateCharts(data.networks);
+                
+                // Update tables
+                // This is simplified - a complete implementation would rebuild the table
+                const weakCount = data.networks.filter(n => n.is_weak).length;
+                document.getElementById('weak-networks-count').innerHTML = 
+                    weakCount > 0 
+                    ? `Found <span class="badge bg-warning text-dark">${weakCount}</span> networks with weak security!` 
+                    : 'No networks with weak security detected.';
+                
+                document.getElementById('rogue-ap-count').innerHTML = 
+                    data.rogue_aps.length > 0 
+                    ? `Detected <span class="badge bg-danger">${data.rogue_aps.length}</span> potential rogue access points!` 
+                    : 'No rogue access points detected.';
+                
+                // Schedule next update if still scanning
+                if (data.scan_active) {
+                    setTimeout(updateNetworksData, updateInterval);
+                } else {
+                    document.getElementById('scan-status').innerText = 'Scanning has stopped.';
+                    document.location.reload();
+                }
+            })
+            .catch(error => console.error('Error updating networks data:', error));
+    }
+    
+    // Start the update loop
+    setTimeout(updateNetworksData, updateInterval);
+    {% endif %}
+    
+    // Initialize charts with existing data
+    document.addEventListener('DOMContentLoaded', function() {
+        const networkData = {{ networks|tojson }};
+        updateCharts(networkData);
+    });
+</script>
+{% endblock %}
